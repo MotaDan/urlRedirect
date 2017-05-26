@@ -1,5 +1,6 @@
-from urllib import request
+from urllib import request, error
 import csv
+import sys
 
 def undirect(urlsFile):
     """Passed in a csv file of urls, it returns a list of what they rediect to."""
@@ -7,8 +8,20 @@ def undirect(urlsFile):
         fileReader = csv.reader(urls)
         
         for url in fileReader:
-            req = request.Request(url[0], headers={'User-Agent' : "Magic Browser"})
-            yield (url[0], request.urlopen(req).geturl())
+            try:
+                opener = request.build_opener(request.HTTPCookieProcessor)
+                opener.addheaders = [('User-Agent', "Mozilla/5.0 (Windows NT 6.3; WOW64; rv:53.0) Gecko/20100101 Firefox/53.0")]
+                yield (url[0], url[1], opener.open(url[1]).geturl())
+            except error.HTTPError as e:
+                print(e)
+                if "linkedin" in e.headers.get("Set-Cookie"):
+                    print("LinkedIn")
+                print("{0} {1}\n".format(url[0], url[1]))
+                yield (url[0], url[1])
+            except ValueError as e:
+                print(e)
+                print("{0} {1}\n".format(url[0], url[1]))
+                yield (url[0], url[1])
     
     
 if __name__ == "__main__":
